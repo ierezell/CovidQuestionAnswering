@@ -1,0 +1,4 @@
+post /index/:document
+delete /index/:document
+
+post /ask/:questionData

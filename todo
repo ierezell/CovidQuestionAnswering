@@ -1,0 +1,2 @@
+Add graph structure instead of just chunking and indexing
+Add an index per node which reference all subnodes
