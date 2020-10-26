@@ -4,11 +4,12 @@ from typing import List, Tuple
 from datatypes import Link
 import hashlib
 
-regex_links_markdown = re.compile(
-    r"(\[([\w\-'’ \xa0\(\)]+)\]\(((?:[\w\.\/:-])+)\))")
+# regex_links_markdown = re.compile(
+# r"(\[([\w\-'’ \xa0\(\)]+)\]\(((?:[\w\.\/:-])+)\))")
 # Match 0 all => [Text](url)
 # Match 1 all => Text
 # Match 2 all => Url
+regex_links_markdown = re.compile(r"(\[(.*?)\]\((.*?)\))")
 
 
 def remove_links(text: str) -> Tuple[str, List[Link]]:

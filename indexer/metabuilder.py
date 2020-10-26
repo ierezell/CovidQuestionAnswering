@@ -1,11 +1,11 @@
-import hashlib
-from typing import Tuple, List
-from utils import hash_text
-from datatypes import Chunk, Link, RawEntry, MetaData, CODE_TO_LANG
-from rake_nltk import Rake
+from typing import Dict, List, Tuple
+
+from datatypes import (LANGUAGES, NB_KEYWORDS, Chunk, Link, MetaData, Models)
+from embedders.embedders import Embedder
 
 
-def create_metadata(chunk: Chunk, links: List[Link]) -> MetaData:
+def create_metadata(chunk: Chunk, links: List[Link], models: Models
+                    ) -> MetaData:
     new_metadatas: MetaData = {}
 
     chunk_links = []
@@ -16,20 +16,30 @@ def create_metadata(chunk: Chunk, links: List[Link]) -> MetaData:
         if chunk_start < link['start'] < chunk_end:
             chunk_links.append(link)
 
-    new_metadatas['keywords'] = extract_keywords(chunk)
+    new_metadatas['keywords'] = extract_keywords(chunk, models['keyworder'])
     new_metadatas['links'] = chunk_links
+
+    embeddings = embed_chunk(chunk, models['embedder'])
+    new_metadatas['title_embedding'] = embeddings[0]
+    new_metadatas['content_embedding'] = embeddings[1]
 
     return new_metadatas
 
 
-def extract_keywords(entry) -> List[str]:
-    r = Rake(language=CODE_TO_LANG[entry['language']])
-    r.extract_keywords_from_text(entry['content'])
+def extract_keywords(chunk, keyworder) -> List[str]:
+    r = keyworder.get(chunk['language'], None)
+    if r is None:
+        return []
+    r.extract_keywords_from_text(chunk['content'])
     keywords: List[str] = r.get_ranked_phrases()
-    return keywords[:6]
+    return keywords[:NB_KEYWORDS]
 
 
-def embed_entry(entry: RawEntry) -> List[float]:
-    content_embedding = embed(entry['content'])
-    title_embedding = embed(entry['title'])
-    return {}
+def embed_chunk(chunk: Chunk, embedders: Dict[LANGUAGES, Embedder]
+                ) -> Tuple[List[float], List[float]]:
+    embedder = embedders.get(chunk['language'], embedders['multi'])
+
+    content_embedding = embedder.embed(chunk['content'])
+    title_embedding = embedder.embed(chunk['title'])
+
+    return (title_embedding, content_embedding)

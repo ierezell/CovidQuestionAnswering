@@ -1,0 +1,3 @@
+- Add stemming and language analysis in ES
+- Add embedders for chunks in the indexer datas
+- Search with this dense vectors in ES and or faiss
