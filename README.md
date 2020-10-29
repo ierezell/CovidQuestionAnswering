@@ -15,6 +15,8 @@ It is written in python and will run in a docker which will then be integrated w
 
 ## Milestones
 
+
+- [x] Full pipeline along with interfaces between components
 - [ ] Retriever yeilds decent results when querying manually
 - [ ] Build retriever dataset & measure retriever performances
 - [ ] TBD
