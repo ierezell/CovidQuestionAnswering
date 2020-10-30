@@ -1,20 +1,26 @@
 import json
-from retriever.retriever import retrieve_docs
+from typing import List, Tuple
 
-import streamlit as st
-from typing import Tuple
-from datatypes import Indexes, RawEntry, Models
-from indexer.indexer import preprocess
 import elasticsearch
-import plotly.express as px
 import numpy as np
 import plotly.graph_objects as go
-# "https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-script-score-query.html#vector-functions"
+import streamlit as st
+
+from datatypes import Indexes, Models, RawEntry
+from indexer.indexer import preprocess
+from qa.refinder import answer_question
+from qa.retriever import retrieve_docs
+import logging
+
 st.title('Gouv bot')
+logging.getLogger("transformers.tokenization_utils_base"
+                  ).setLevel(logging.ERROR)
 
 
 # @st.cache(hash_funcs={elasticsearch.Elasticsearch: id,
-#   builtins.SwigPyObject: id})
+#   "builtins.SwigPyObject": id,
+#   "preshed.maps.PreshMap": id,
+#   "cymem.cymem.Pool": id})
 def ask_question(indexes: Indexes, models: Models, question: str):
     return retrieve_docs(indexes, models, question)
 
@@ -34,16 +40,19 @@ def clear_indexes(indexes: Indexes):
         indexes['db'].indices.delete(index=index, ignore=[400, 404])
 
 
-indexes = None  # type: ignore
-user_input = st.text_input(
-    "Posez une question", "Les femmes enceintes sont-elles plus a risque ?")
+# @st.cache(hash_funcs={elasticsearch.Elasticsearch: id,
+#                       "builtins.SwigPyObject": id,
+#                       "preshed.maps.PreshMap": id,
+#                       "cymem.cymem.Pool": id})
+def get_all_docs_vectors(indexes: Indexes) -> List[Tuple[List[float], str]]:
+    all_docs: List[Tuple[List[float], str]] = []
+    for i in range(indexes['faiss'].ntotal):
+        all_docs.append((indexes['faiss'].reconstruct(i),
+                         indexes['faiss_idx'][i]))
+    return all_docs
 
-if st.button('ask'):
-    with st.spinner('Processing...'):
-        indexes, models = preprocess_data()
-    st.success('Done!')
-    question_embed, support, max_score, hits = ask_question(indexes,
-                                                            models, user_input)
+
+def get_fig_embeddings(indexes, models, support, question_embed):
     support_embed = []
     support_hash = []
     for sup in support:
@@ -52,14 +61,10 @@ if st.button('ask'):
         sup.pop('language', None)
         sup.pop('title_embedding', None)
         support_embed.append(sup.pop('content_embedding', None))
-        support_hash.append(sup['chunk_hash'])
+        support_hash.append(sup.pop('content_embedding', None))
 
-    all_docs = []
-    for i in range(indexes['faiss'].ntotal):
-        if indexes['faiss_idx'][i] in support_hash:
-            continue
-        else:
-            all_docs.append(indexes['faiss'].reconstruct(i))
+    all_docs = [doc_emb for doc_emb, doc_hash in get_all_docs_vectors(indexes)
+                if doc_hash not in support_hash]
 
     support_PCA = models['dim_reducer'].transform(support_embed)
     docs_PCA = models['dim_reducer'].transform(all_docs)
@@ -67,34 +72,49 @@ if st.button('ask'):
         np.array(question_embed).reshape(1, -1))
 
     all_data = np.concatenate((docs_PCA, support_PCA,  question_PCA), axis=0)
-    print(len(docs_PCA))
-    print(len(support_PCA))
-    # px.scatter_3d(
-    #     color_discrete_sequence=,
-    # )
 
     fig = go.Figure(data=[go.Scatter3d(
-        x=[plop[0] for plop in all_data],
-        y=[plop[1] for plop in all_data],
-        z=[plop[2] for plop in all_data],
-        mode='markers',
-        marker=dict(
-            # size=12,
+        x=[plop[0] for plop in all_data], y=[plop[1] for plop in all_data],
+        z=[plop[2] for plop in all_data], mode='markers', marker=dict(
+            opacity=0.8,
             color=['green']*len(docs_PCA) + ['blue'] *
-            len(support_PCA) + ['red'],
-            # colorscale='Viridis',   # choose a colorscale
-            opacity=0.8
-        )
-    )])
+            len(support_PCA) + ['red']))])
 
-    st.plotly_chart(fig)
+    return fig
 
-    st.write("Max Score")
-    st.write(max_score)
-    st.write("Hits")
-    st.write(hits)
-    st.write("Docs")
-    st.write(support)
+
+indexes = None  # type: ignore
+user_input = st.text_input(
+    "Posez une question", "Les femmes enceintes sont-elles plus a risque ?")
+
+if st.button('ask'):
+    with st.spinner('Processing...'):
+        indexes, models = preprocess_data()
+    st.success('Done!')
+    question_embed, supports, max_score, hits = ask_question(indexes, models,
+                                                             user_input)
+
+    answer = answer_question(question_embed, user_input, supports, models)
+
+    st.write(answer)
+
+    with st.beta_expander("See the supports documents"):
+        st.write("Max Score")
+        st.write(max_score)
+        st.write("Hits")
+        st.write(hits)
+        st.write("Docs")
+        st.write([
+            {
+                k: v for k, v in sup.items()
+                if k in ['title', 'content', 'parent_title', 'path']
+            }
+            for sup in supports
+        ])
+
+    with st.beta_expander("See embedded documents"):
+        st.plotly_chart(get_fig_embeddings(indexes, models,
+                                           supports, question_embed))
 
 
 if st.button('clear database'):

@@ -16,7 +16,7 @@ def create_metadata(chunk: Chunk, links: List[Link], models: Models
         if chunk_start < link['start'] < chunk_end:
             chunk_links.append(link)
 
-    new_metadatas['keywords'] = extract_keywords(chunk, models['keyworder'])
+    # new_metadatas['keywords'] = extract_keywords(chunk, models['keyworder'])
     new_metadatas['links'] = chunk_links
 
     embeddings = embed_chunk(chunk, models['embedder'])
@@ -37,7 +37,7 @@ def extract_keywords(chunk, keyworder) -> List[str]:
 
 def embed_chunk(chunk: Chunk, embedders: Dict[LANGUAGES, Embedder]
                 ) -> Tuple[List[float], List[float]]:
-    embedder = embedders.get(chunk['language'], embedders['multi'])
+    embedder = embedders.get(chunk['language'], embedders['fr'])
 
     content_embedding = embedder.embed(chunk['content'])
     title_embedding = embedder.embed(chunk['title'])
