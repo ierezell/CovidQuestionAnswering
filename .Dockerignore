@@ -1,6 +1,0 @@
-.git/
-*.pyc
-__pycache__
-.vscode
-qa-venv
-qa-venv37

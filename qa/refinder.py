@@ -1,9 +1,10 @@
-from datatypes import Models
-from spacy.lang.fr.stop_words import STOP_WORDS as fr_stop
-from utils import cosine_similarity
-from typing import List, Set
 import logging
 import re
+from typing import List, Set
+
+from datatypes import Answer, Chunk, Models
+from spacy.lang.fr.stop_words import STOP_WORDS as fr_stop
+from utils import cosine_similarity
 
 logging.getLogger("transformers.tokenization_utils_base"
                   ).setLevel(logging.ERROR)
@@ -15,13 +16,16 @@ def get_keywords(text: str, processor) -> Set[str]:
 
 
 def answer_question(question_embed: List[float], question: str,
-                    supports, models: Models):
+                    supports: List[Chunk], models: Models) -> Answer:
+
+    best_ans: Answer = {"content": '', "score": 0.0, "start": 0, "end": 0,
+                        'answer': "No answer found, try to reformulate",
+                        'elected': 'n/a'}
     if not supports:
-        return {"content": '', 'answer': "No answer found, try to reformulate",
-                "score": 0, "start": 0, "end": 0, 'elected': 'N/a1'}
-    best_ans = None
-    best_score = 0
-    best_chunk = None
+        return best_ans
+
+    best_score: float = 0.0
+    best_chunk: Chunk
     nlp = models['processor']['fr']
 
     # Docs one by one
@@ -29,14 +33,14 @@ def answer_question(question_embed: List[float], question: str,
 
     for chunk in supports:
         chunk['content'] = chunk['content'].replace('_', '')
-        chunk_sents = [s.text for s in nlp(chunk['content']).sents]
+        chunk_sents: List[str] = [s.text for s in nlp(chunk['content']).sents]
 
-        ans = models['answerer']['fr'].answer(question, chunk['content'])
+        ans = models['answerer']['fr'].answer(question,
+                                              chunk['content'])
         match = re.match(r'(^.+)\.', ans['answer'])
         clean_ans = match.groups()[0] if match else ans['answer']
-        # print(clean_ans)
-        # print(chunk_sents)
-        ans_sent = [s for s in chunk_sents if clean_ans in s][0]
+
+        ans_sent: str = [s for s in chunk_sents if clean_ans in s][0]
         ans_embed = models['embedder']['fr'].embed(ans_sent)
         score_embed = cosine_similarity(question_embed, ans_embed)
 
@@ -51,9 +55,9 @@ def answer_question(question_embed: List[float], question: str,
 
         score = score_keywords + score_embed + ans['score']
 
-        # score = score_embed
         if score > best_score:
             best_ans = {'score':  ans['score'], 'answer': ans_sent,
+                        'content': chunk['content'],
                         'start': chunk['content'].index(ans_sent),
                         'end': chunk['content'].index(ans_sent)+len(ans_sent),
                         'elected': 'qa'}
@@ -61,7 +65,9 @@ def answer_question(question_embed: List[float], question: str,
             best_score = score
 
     if best_ans['score'] < 0.2:
-        best_ans = {'score': 0, 'answer': '', 'start': 0, 'end': 0}
+        best_ans: Answer = {"content": '', "score": 0.0, "start": 0, "end": 0,
+                            'answer': "No answer found, try to reformulate",
+                            'elected': 'n/a'}
         for sent in [s.text for s in nlp(best_chunk['content']).sents]:
             sent_score = cosine_similarity(
                 models['embedder']['fr'].embed(sent), question_embed)
@@ -69,10 +75,11 @@ def answer_question(question_embed: List[float], question: str,
             if sent_score > best_ans['score']:
                 start = best_chunk['content'].index(sent)
                 best_ans = {'score': sent_score, 'answer': sent,
+                            'content': best_chunk['content'],
                             'start': start, 'end': start+len(sent),
                             'elected': 'kw'}
 
-    return dict({'content': best_chunk['content']}, **best_ans)
+    return best_ans
     # # Concat all docs and find answer
     # all_text = []
     # for chunk in supports:

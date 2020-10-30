@@ -1,31 +1,17 @@
-from datatypes import Chunk, Indexes, Models
-from typing import Any, List, Tuple
-import numpy as np
+from typing import Any, List, Tuple, cast
+
+from datatypes import Indexes, Models, Answer
 
 
 def retrieve_docs(indexes: Indexes, models: Models, question: str
                   ) -> Tuple[List[float], List[Any], float, int]:
+
     question_embed = models['embedder']['fr'].embed(question)
-    supports, max_score, hits = retrieve_es(indexes['db'],
-                                            question, question_embed)
 
-    # supports, max_score, hits = retrieve_faiss(indexes, question_embed)
+    supports, max_score, hits = retrieve_es(indexes['db'], question,
+                                            question_embed)
+
     return question_embed, supports, max_score, hits
-
-
-def retrieve_faiss(indexes: Indexes, question_embed: List[float]):
-    distances, indices = indexes['faiss'].search(np.array([question_embed],
-                                                          dtype=np.float32),
-                                                 5)
-
-    id_body = {"query": {"terms": {"_id": [indexes['faiss_idx'][i]
-                                           for i in indices[0]]}}}
-
-    res = indexes['db'].search(index='gouv', body=id_body)
-    supports = []
-    for doc in res['hits']['hits']:
-        supports.append({'score': doc['_score'], **doc["_source"]})
-    return supports, min(distances[0]), 5
 
 
 def retrieve_es(es: Any, question: str, question_embed: List[float]):
@@ -65,10 +51,11 @@ def retrieve_es(es: Any, question: str, question_embed: List[float]):
     res = es.search(index="gouv", body=es_query_body)
     max_score = res['hits']['max_score']
     hits = res['hits']['total']
-    print("HITS  ", hits)
 
-    supports = []
+    supports: List[Answer] = []
     for doc in res['hits']['hits']:
-        supports.append({'score': doc['_score'], **doc["_source"]})
+        supports.append(cast(Answer,
+                             {'score': doc['_score'], **doc["_source"]})
+                        )
 
     return supports, max_score, hits

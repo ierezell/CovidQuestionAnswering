@@ -1,3 +1,7 @@
+"""
+This file is made to check the pipeline end to end
+in one shot just to verify for code mistakes
+"""
 import json
 from typing import List, Tuple
 
@@ -8,9 +12,6 @@ from datatypes import Indexes, Models, RawEntry
 from indexer.indexer import preprocess
 from qa.refinder import answer_question
 from qa.retriever import retrieve_docs
-
-# @st.cache(hash_funcs={elasticsearch.Elasticsearch: id,
-#   builtins.SwigPyObject: id})
 
 
 def ask_question(indexes: Indexes, models: Models, question: str):
@@ -75,5 +76,5 @@ indexes, models = preprocess_data()
 user_input = "Les femmes enceintes sont-elles plus a risque ?"
 question_embed, support, max_score, hits = ask_question(indexes, models,
                                                         user_input)
-answer = answer_question(user_input, support, models)
+answer = answer_question(question_embed, user_input, support, models)
 clear_indexes(indexes)

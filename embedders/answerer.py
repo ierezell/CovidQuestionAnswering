@@ -1,28 +1,63 @@
-from typing import List
-
-from datatypes import LANGUAGES, MODEL_NAMES
-from transformers import AutoModelForQuestionAnswering, AutoTokenizer
-from transformers.pipelines import pipeline
+from typing import List, TypedDict, cast
 
 import torch
+from datatypes import LANGUAGES, MODEL_NAMES, Answer
+from transformers import (AutoModelForQuestionAnswering as AutoModelQA,
+                          AutoTokenizer)
+from transformers.pipelines import pipeline
+
+
+class Res(TypedDict):
+    answer: str
+    score: float
+    start: int
+    end: int
 
 
 class Answerer:
+    """
+    Simlpe class which provide the ability to get
+    the span answering the best the question given a context paragraph
+
+    It is instanciated in :func:`~indexer.indexer.create_models`
+    which is called by :func:`~indexer.indexer.process`
+
+    It is used in :func:`~qa.refinder.answer_question`
+    """
+
     def __init__(self, lang: LANGUAGES = 'multi') -> None:
+
         self.tokenizer = AutoTokenizer.from_pretrained(MODEL_NAMES[lang])
-        self.model = AutoModelForQuestionAnswering.from_pretrained(
-            MODEL_NAMES[lang])
+        self.model = AutoModelQA.from_pretrained(MODEL_NAMES[lang])
+
         self.nlp = pipeline("question-answering",
                             model=self.model,
                             tokenizer=self.tokenizer,
                             framework='pt',
                             device=0 if torch.cuda.is_available() else -1)
 
-    def answer(self, question: str, context: str) -> List[float]:
+    def answer(self, question: str, context: str) -> Answer:
+        """Give the best sentence in the context answering the question
+            Used in :func:`~qa.refinder.answer_question`
+        Args:
+            question (str)
+            context (str): A paragraph ~1000 cahracters
+
+        Returns:
+            Answer
+        """
         with torch.no_grad():
-            res = self.nlp(question=question, context=context)
-        return res
-        # OR
+            res: Res = self.nlp(question=question, context=context)
+            answer: Answer = {'answer': res['answer'],
+                              'score': res['score'],
+                              'start': res['start'],
+                              'end': res['end'],
+                              'content': context, "elected": "qa"}
+            # TODO Move the logic of finding the full sentence here
+        return answer
+
+        # OR to to it by hand and have more control
+
         # inputs = self.tokenizer(question, context, add_special_tokens=True,
         #                         return_tensors="pt")
         # input_ids = inputs["input_ids"].tolist()[0]

@@ -40,6 +40,7 @@ def chunker(entry: RawEntry, models: Models) -> List[Chunk]:
 
 
 def create_chunk(entry: RawEntry, content: str, chunk_len: int) -> Chunk:
+    # Copy an entry which is not of type chunk but then add all the fields
     chunk: Chunk = deepcopy(entry)  # type: ignore
     chunk['content'] = content
     chunk['chunk_hash'] = hash_text(content)
