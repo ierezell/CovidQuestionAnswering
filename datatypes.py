@@ -67,6 +67,7 @@ class Models(TypedDict, total=False):
 
 
 class RetrieveOptions(TypedDict):
+    retrieve_nb: int
     boost_lem: float
     boost_ner: float
     boost_date: float

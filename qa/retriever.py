@@ -21,6 +21,7 @@ def retrieve_es(db_name: str, es: Any, question: str,
                 ) -> Tuple[List[Any], float, int]:
 
     es_query_body = {
+        "size": options['retrieve_nb'],
         "query": {
             "script_score": {
                 "query": {

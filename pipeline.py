@@ -18,8 +18,8 @@ logging.getLogger("transformers.tokenization_utils_base"
                   ).setLevel(logging.ERROR)
 
 st.sidebar.subheader("Preprocesssing options")
-st.sidebar.text("If choosen options are not precomputed")
-st.sidebar.text("it will take ~5mn more")
+st.sidebar.write(
+    "If choosen options are not precomputed it will take ~5mn more")
 
 embedding_mode:  Literal["all", "sentence"] = st.sidebar.radio(
     label="Embedding mode", options=["all", "sentence"])
@@ -42,6 +42,9 @@ boost_title: float = st.sidebar.slider(label="Title importance", min_value=0.0,
 boost_content: float = st.sidebar.slider(label="Content importance",
                                          min_value=0.0, max_value=10.0,
                                          value=1.0, step=0.1)
+
+retrieve_nb: int = st.sidebar.slider(
+    label="Number of docs", min_value=1, max_value=100, value=10, step=1)
 
 boost_title_embedding: float = st.sidebar.slider(
     label="Title embedding importance", min_value=0.0, max_value=10.0,
@@ -84,6 +87,7 @@ def ask_question(indexes: Indexes, models: Models, question: str
     return retrieve_docs(
         f"gouv_{embedding_mode}", indexes, models, question,
         options={
+            'retrieve_nb': retrieve_nb,
             'boost_lem': boost_lem,
             'boost_ner': boost_ner,
             'boost_date': boost_date,
@@ -132,9 +136,13 @@ user_input = st.text_input("Posez une question",
 if st.button('ask'):
     with st.spinner('Processing...'):
         indexes, models = preprocess_data()
-    st.success('Done!')
-    question_embed, supports, max_score, hits = ask_question(indexes, models,
-                                                             user_input)
+    st.success('Database created sucessfully !')
+
+    with st.spinner('Fetching...'):
+        question_embed, supports, max_score, hits = ask_question(indexes,
+                                                                 models,
+                                                                 user_input)
+    st.success(f'{retrieve_nb} docs fetched')
 
     with st.beta_expander("See the supports documents"):
         st.write("Max Score")
@@ -151,8 +159,9 @@ if st.button('ask'):
             for sup in supports
         ])
 
-    answer = answer_question(question_embed, user_input, supports, models)
-
+    with st.spinner('Answering...'):
+        answer = answer_question(question_embed, user_input, supports, models)
+    st.success('Answer found')
     st.write(answer)
 
 if st.button('clear database'):
