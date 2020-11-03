@@ -18,12 +18,12 @@ https://www.quebec.ca/sante/problemes-de-sante/a-z/coronavirus-2019/reponses-que
 - Better filter / Election (Ex : question "Plop" returns documents)
 - Test embdding all vs sentence
 - add other field boosting
+- Add NER/lemmatization to retrieve voc with same semantic structure
 
 # Ideas :
 
-- Add NER to retrieve voc with same semantic structure
 - Move the clear_database button further from the ask button (stupid missclick)
-- Lemmatize all the content of the db ?
+- Baseline done : Need a dataset to test the solutions
 
 # TLDR :
 

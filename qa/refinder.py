@@ -6,6 +6,7 @@ from typing import List, Set, Any, Tuple
 from datatypes import Answer, Chunk, Models
 from spacy.lang.fr.stop_words import STOP_WORDS as fr_stop
 from utils import cosine_similarity
+from datetime import datetime
 
 logging.getLogger("transformers.tokenization_utils_base"
                   ).setLevel(logging.ERROR)
@@ -15,7 +16,7 @@ def get_keywords(text: str, processor) -> Set[str]:
     return {w.lemma_ for w in processor(text) if w.lemma_ not in fr_stop}
 
 
-def get_best_span(context: str, question: str, qa_model: Answerer, nlp: Any
+def get_best_span(chunk: Chunk, question: str, qa_model: Answerer, nlp: Any
                   ) -> Tuple[str, float]:
     """Get the best full sentence answering the question within a context.
     If possible add the next sentence as well
@@ -26,9 +27,9 @@ def get_best_span(context: str, question: str, qa_model: Answerer, nlp: Any
         qa_model (Answerer): The deep learning model
         nlp (Any): Spacy preprocessor for lemmatization, sentecizer, tokenizer
     """
-    qa_ans = qa_model.answer(question, context)
+    qa_ans = qa_model.answer(question, chunk)
     match = re.match(r'(^.+)\.', qa_ans['answer'])
-    chunk_sents: List[str] = [s.text for s in nlp(context).sents]
+    chunk_sents: List[str] = [s.text for s in nlp(chunk['content']).sents]
     clean_ans = match.groups()[0] if match else qa_ans['answer']
 
     # Get the full sentence from the elected span
@@ -47,6 +48,7 @@ def answer_question(question_embed: List[float], question: str,
 
     best_ans: Answer = {"content": '', "title": '', "score": 0.0,
                         "start": 0, "end": 0, 'elected': 'n/a',
+                        'date': datetime.now(),
                         'answer': "No answer found, try to reformulate"}
     if not supports:
         return best_ans
@@ -60,8 +62,8 @@ def answer_question(question_embed: List[float], question: str,
     # Docs one by one
     for chunk in supports:
 
-        ans_sent, ans_score = get_best_span(context=chunk['content'],
-                                            question=question, nlp=nlp,
+        ans_sent, ans_score = get_best_span(chunk=chunk, question=question,
+                                            nlp=nlp,
                                             qa_model=models['answerer']['fr'])
 
         ans_embed = models['embedder']['fr'].embed(ans_sent, "sentence")
@@ -82,6 +84,7 @@ def answer_question(question_embed: List[float], question: str,
             best_ans = {'score':  ans_score, 'answer': ans_sent,
                         'content': chunk['content'],
                         "title": chunk['title'],
+                        'date': chunk['first_seen_date'],
                         'start': chunk['content'].index(ans_sent),
                         'end': chunk['content'].index(ans_sent)+len(ans_sent),
                         'elected': 'qa'}
@@ -91,6 +94,7 @@ def answer_question(question_embed: List[float], question: str,
     if best_ans['score'] < 0.2:
         best_ans: Answer = {"content": '', "title": '', "score": 0.0,
                             "start": 0, "end": 0, 'elected': 'n/a',
+                            'date': datetime.now(),
                             'answer': "No answer found, try to reformulate"}
 
         for sent in [s.text for s in nlp(best_chunk['content']).sents]:
@@ -103,6 +107,7 @@ def answer_question(question_embed: List[float], question: str,
                 best_ans = {'score': sent_score, 'answer': sent,
                             'content': best_chunk['content'],
                             'title': best_chunk['title'],
+                            'date': best_chunk['first_seen_date'],
                             'start': start, 'end': start+len(sent),
                             'elected': 'kw'}
 

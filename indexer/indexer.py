@@ -16,7 +16,7 @@ from .chunker import chunker
 from .metabuilder import create_metadata
 
 
-def recurse_add(raw_entry: RawEntry, level: int,
+def recurse_add(db_name: str, raw_entry: RawEntry, level: int,
                 indexes: Indexes, models: Models,
                 parents: List[Chunk] = []) -> None:
     # Clean entry
@@ -33,7 +33,8 @@ def recurse_add(raw_entry: RawEntry, level: int,
         chunk['first_seen_date'] = first_seen_date
         chunk['page_content'] = raw_entry['content']
 
-        metadatas = create_metadata(chunk, links, models)
+        metadatas = create_metadata(chunk, links, models,
+                                    db_name.split('_')[1])
 
         chunk.update(metadatas)  # type: ignore
 
@@ -60,12 +61,12 @@ def recurse_add(raw_entry: RawEntry, level: int,
         current_parents.append(chunk)
 
         if chunk['content'] != chunk['title']:
-            indexes['db'].index(index='gouv',
+            indexes['db'].index(index=db_name,
                                 id=chunk['chunk_hash'],
                                 body=chunk)
 
     for child in raw_entry.get('children', []):
-        recurse_add(child, parents=current_parents,
+        recurse_add(db_name, child, parents=current_parents,
                     indexes=indexes, models=models, level=level+1)
 
 
@@ -92,14 +93,14 @@ def create_models(langs: List[LANGUAGES]) -> Models:
     return models
 
 
-def create_indexes() -> Tuple[Indexes, bool]:
+def create_indexes(db_name: str) -> Tuple[Indexes, bool]:
     need_creation = False
 
     es = elasticsearch.Elasticsearch()
 
     indexes: Indexes = {"db": es}
 
-    if not es.indices.exists(index='gouv'):
+    if not es.indices.exists(index=db_name):
         index_body = {
             "settings": {
                 "analysis": {
@@ -143,25 +144,25 @@ def create_indexes() -> Tuple[Indexes, bool]:
             }
         }
 
-        es.indices.create(index='gouv', ignore=400, body=index_body)
+        es.indices.create(index=db_name, ignore=400, body=index_body)
         need_creation = True
 
     return indexes, need_creation
 
 
-def preprocess(raw_entry: RawEntry) -> Tuple[Indexes, Models]:
+def preprocess(db_name: str, raw_entry: RawEntry) -> Tuple[Indexes, Models]:
     start = time.time()
     models = create_models(['fr'])
     print(f"Models created in {time.time()-start}s")
 
     start = time.time()
-    indexes, need_creation = create_indexes()
+    indexes, need_creation = create_indexes(db_name)
     print(f"Indexes created in {time.time()-start}s")
 
     if need_creation:
         print("Doing all : need creation")
         start = time.time()
-        recurse_add(raw_entry, parents=[], level=0,
+        recurse_add(db_name, raw_entry, parents=[], level=0,
                     indexes=indexes, models=models)
         print(f"Entries added in {time.time()-start}s")
 

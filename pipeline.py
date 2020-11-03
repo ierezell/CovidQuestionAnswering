@@ -5,7 +5,7 @@ You need to call it with streamlit run pipeline.py
 """
 import json
 import logging
-from typing import Tuple, List, Any
+from typing import Tuple, List, Any, Literal
 
 import streamlit as st
 
@@ -13,17 +13,62 @@ from datatypes import Indexes, RawEntry, Models
 from indexer.indexer import preprocess
 from qa.refinder import answer_question
 from qa.retriever import retrieve_docs
-
 st.title('Gouv bot')
 logging.getLogger("transformers.tokenization_utils_base"
                   ).setLevel(logging.ERROR)
 
+st.sidebar.subheader("Preprocesssing options")
+st.sidebar.text("If choosen options are not precomputed")
+st.sidebar.text("it will take ~5mn more")
 
+embedding_mode:  Literal["all", "sentence"] = st.sidebar.radio(
+    label="Embedding mode", options=["all", "sentence"])
+
+st.sidebar.subheader("Retrieving options")
+
+boost_date: float = st.sidebar.slider(
+    label="Date decay", min_value=0.0, max_value=10.0, value=0.1, step=0.1)
+
+boost_lem: float = st.sidebar.slider(label="Lemmatization importance",
+                                     min_value=0.0, max_value=10.0, value=1.0,
+                                     step=0.1)
+
+boost_ner: float = st.sidebar.slider(label="NER importance", min_value=0.0,
+                                     max_value=10.0, value=1.0, step=0.1)
+
+boost_title: float = st.sidebar.slider(label="Title importance", min_value=0.0,
+                                       max_value=10.0, value=1.0, step=0.1)
+
+boost_content: float = st.sidebar.slider(label="Content importance",
+                                         min_value=0.0, max_value=10.0,
+                                         value=1.0, step=0.1)
+
+boost_title_embedding: float = st.sidebar.slider(
+    label="Title embedding importance", min_value=0.0, max_value=10.0,
+    value=1.0, step=0.1)
+
+boost_parent_embedding: float = st.sidebar.slider(
+    label="Parent embedding importance", min_value=0.0, max_value=10.0,
+    value=1.0, step=0.1)
+
+boost_content_embedding: float = st.sidebar.slider(
+    label="Content embedding importance", min_value=0.0, max_value=10.0,
+    value=1.0, step=0.1)
+
+boost_parent_title: float = st.sidebar.slider(
+    label="Parent title importance", min_value=0.0, max_value=10.0,
+    value=1.0, step=0.1)
+
+boost_parent_content: float = st.sidebar.slider(
+    label="Parent content importance", min_value=0.0, max_value=10.0,
+    value=1.0, step=0.1)
 # @st.cache(hash_funcs={elasticsearch.Elasticsearch: id,
 #                       "preshed.maps.PreshMap": id,
 #                       "cymem.cymem.Pool": id,
 #                       "thinc.model.Model": id,
 #                       "spacy.pipeline.tok2vec.Tok2VecListener": id})
+
+
 def ask_question(indexes: Indexes, models: Models, question: str
                  ) -> Tuple[List[float], List[Any], float, int]:
     """Query the database to retrieve the 10 most pertinent documents
@@ -36,10 +81,24 @@ def ask_question(indexes: Indexes, models: Models, question: str
     Returns:
 
     """
-    return retrieve_docs(indexes, models, question)
+    return retrieve_docs(
+        f"gouv_{embedding_mode}", indexes, models, question,
+        options={
+            'boost_lem': boost_lem,
+            'boost_ner': boost_ner,
+            'boost_date': boost_date,
+            'boost_title': boost_title,
+            'boost_content': boost_content,
+            'boost_parent_title': boost_parent_title,
+            'boost_parent_content': boost_parent_content,
+            'boost_title_embedding': boost_title_embedding,
+            'boost_parent_embedding': boost_parent_embedding,
+            'boost_content_embedding': boost_content_embedding,
+            'embedding_mode': embedding_mode,
+        })
 
 
-@st.cache(allow_output_mutation=True)
+@ st.cache(allow_output_mutation=True)
 def preprocess_data() -> Tuple[Indexes, Models]:
     """Fill the indexes and create the models to interact with it
 
@@ -51,7 +110,7 @@ def preprocess_data() -> Tuple[Indexes, Models]:
     with open('datasets/gouv/DOCUMENTS.json', 'r') as file:
         # with open('datasets/gouv/dummy.json', 'r') as file:
         data: RawEntry = json.load(file)
-    indexes, models = preprocess(data)
+    indexes, models = preprocess(f"gouv_{embedding_mode}", data)
 
     return indexes, models
 

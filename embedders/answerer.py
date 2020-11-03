@@ -3,7 +3,7 @@ from typing import TypedDict
 import torch
 from config import LANGUAGES
 from .config import MODEL_NAMES
-from datatypes import Answer
+from datatypes import Answer, Chunk
 from transformers import AutoModelForQuestionAnswering as AutoModelQA
 from transformers import AutoTokenizer
 from transformers.pipelines import pipeline
@@ -45,23 +45,28 @@ class Answerer:
 
         print(f"Answerer will compute on {'cpu' if DEVICE < 0 else 'gpu'}")
 
-    def answer(self, question: str, context: str) -> Answer:
+    def answer(self, question: str, chunk: Chunk) -> Answer:
         """Give the best sentence in the context answering the question
             Used in :func:`~qa.refinder.answer_question`
         Args:
             question (str)
-            context (str): A paragraph ~1000 cahracters
+            context (str): A paragraph ~1000 characters
 
         Returns:
             Answer
         """
         with torch.no_grad():
-            res: Res = self.nlp(question=question, context=context)
-            answer: Answer = {'answer': res['answer'],
-                              'score': res['score'],
-                              'start': res['start'],
-                              'end': res['end'],
-                              'content': context, "elected": "qa"}
+            res: Res = self.nlp(question=question, context=chunk['content'])
+            answer: Answer = {
+                'score': res['score'],
+                'content': chunk['content'],
+                'answer': res['answer'],
+                'title': chunk['title'],
+                'date': chunk['first_seen_date'],
+                'start': res['start'],
+                'end': res['end'],
+                'elected': 'qa',
+            }
             # TODO Move the logic of finding the full sentence here
         return answer
 

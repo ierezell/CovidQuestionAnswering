@@ -54,6 +54,7 @@ class Answer(TypedDict):
     content: str
     answer: str
     title: str
+    date: datetime
     start: int
     end: int
     elected: Literal['qa', 'kw', 'n/a']
@@ -63,3 +64,17 @@ class Models(TypedDict, total=False):
     embedder: Dict[LANGUAGES, Any]
     answerer: Dict[LANGUAGES, Any]
     processor: Dict[LANGUAGES, Any]
+
+
+class RetrieveOptions(TypedDict):
+    boost_lem: float
+    boost_ner: float
+    boost_date: float
+    boost_title: float
+    boost_content: float
+    boost_parent_title: float
+    boost_parent_content: float
+    boost_title_embedding: float
+    boost_parent_embedding: float
+    boost_content_embedding: float
+    embedding_mode: Literal["all", "sentence"]
