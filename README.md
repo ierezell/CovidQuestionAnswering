@@ -23,6 +23,7 @@ It is written in python and will run in a docker which will then be integrated w
 - Optional but prefered : Make a virtual environement
 - Install all the dependecies with `pip install -r requirements.txt`
 - Run the code with `streamlit run pipeline.py`. It will open a tab in your default browser
+- Make sure elasticsearch is launched, the python code will connect to it with defaults (localhost:9200)
 - First time running, the database will be computed when you click on the `ask` button, it takes time (more than 5mn on cpu). Subsequent question will use the same database so it will be fast.
 
 N.b : Eqch times when asking the first question (after database is created) all the models needs to be loaded so expect ~50s of overhead. Then subsequent questions are fast.
