@@ -1,10 +1,16 @@
 from copy import deepcopy
-from utils import hash_text
-from datatypes import Chunk, Models, RawEntry, CHUNK_SIZE
 from typing import List
+
+from config import CHUNK_SIZE
+from datatypes import Chunk, Models, RawEntry
+from utils import hash_text
 
 
 def chunker(entry: RawEntry, models: Models) -> List[Chunk]:
+    """Create chunks by first splitting the content in sentences and then
+    adding each sentence until reaching the desired size. If adding the
+    sentence make the chunk bigger than the allowed size, start a new chunk.
+    """
     chunks: List[Chunk] = []
 
     chunk_content: List[str] = []
@@ -40,6 +46,7 @@ def chunker(entry: RawEntry, models: Models) -> List[Chunk]:
 
 
 def create_chunk(entry: RawEntry, content: str, chunk_len: int) -> Chunk:
+    """Add content and it's informations to the chunk"""
     # Copy an entry which is not of type chunk but then add all the fields
     chunk: Chunk = deepcopy(entry)  # type: ignore
     chunk['content'] = content
@@ -50,6 +57,8 @@ def create_chunk(entry: RawEntry, content: str, chunk_len: int) -> Chunk:
 
 
 def split(text: str, processor) -> List[str]:
+    """Split a chunk of text to make chunk consistant (not splitting them in
+    the middle of a word or a sentence)"""
     chunks: List[str] = []
     for piece in processor(text).sents:
         chunks.append(piece.text)

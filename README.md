@@ -9,24 +9,27 @@ It is written in python and will run in a docker which will then be integrated w
 ## Method :
 
 - Preprocess
-  - Clean the html data (already parsed in a tree with children manner)
+
+  - Clean the html data (already parsed in a tree manner with children but maybe will do a parser with scrapy)
   - Chunk the documents in pieces
   - Compute useful metadatas
   - Index this chunks with the metadatas in a database
+
 - Retrieving
+
   - Query the database with infos from botpress (like topics) to retrieve the X more pertinents docs
   - Among those docs elect the best sentence to answer the question
 
 ## Assumptions
 
 - We assume the query is a short question
-- We assume only one language
+- We assume only one language (french for now)
 - We assume the query is in the scope of the documents (COVID-related)
 - We assume there's always a relevant document for the query
 
 ## Milestones
 
 - [x] Full pipeline along with interfaces between components
-- [ ] Retriever yeilds decent results when querying manually
+- [ ] Retriever yields decent results when querying manually
 - [ ] Build retriever dataset & measure retriever performances
 - [ ] TBD

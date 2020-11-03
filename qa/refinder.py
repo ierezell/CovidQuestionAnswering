@@ -41,7 +41,7 @@ def answer_question(question_embed: List[float], question: str,
         clean_ans = match.groups()[0] if match else ans['answer']
 
         ans_sent: str = [s for s in chunk_sents if clean_ans in s][0]
-        ans_embed = models['embedder']['fr'].embed(ans_sent)
+        ans_embed = models['embedder']['fr'].embed(ans_sent, "sentence")
         score_embed = cosine_similarity(question_embed, ans_embed)
 
         keywords_ans = get_keywords(ans['answer'], nlp)
@@ -70,7 +70,8 @@ def answer_question(question_embed: List[float], question: str,
                             'elected': 'n/a'}
         for sent in [s.text for s in nlp(best_chunk['content']).sents]:
             sent_score = cosine_similarity(
-                models['embedder']['fr'].embed(sent), question_embed)
+                models['embedder']['fr'].embed(sent, "sentence"),
+                question_embed)
 
             if sent_score > best_ans['score']:
                 start = best_chunk['content'].index(sent)

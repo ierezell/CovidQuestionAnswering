@@ -1,13 +1,11 @@
 from typing import List, Literal
 
 import torch
-from datatypes import LANGUAGES, MODEL_NAMES
 from transformers import AutoModel, AutoTokenizer
 
-DEVICE = torch.device(
-    "cuda") if torch.cuda.is_available() else torch.device("cpu")
+from config import LANGUAGES
 
-print(f"Embeddings will be computed on {DEVICE}")
+from .config import MODEL_NAMES
 
 
 class Embedder:
@@ -21,10 +19,16 @@ class Embedder:
     It is used in :func:`~qa.retriever.retrieve_docs`
     """
 
-    def __init__(self, processor, lang: LANGUAGES = 'multi') -> None:
+    def __init__(self, processor, lang: LANGUAGES = 'multi',
+                 prefer_gpu: bool = False) -> None:
+
+        self.device = torch.device("cuda") if (
+            torch.cuda.is_available() and prefer_gpu) else torch.device("cpu")
+
+        print(f"Embedder will compute on {self.device}")
         self.tokenizer = AutoTokenizer.from_pretrained(MODEL_NAMES[lang])
         self.model = AutoModel.from_pretrained(MODEL_NAMES[lang])
-        self.model = self.model.to(DEVICE).eval()
+        self.model = self.model.to(self.device).eval()
         self.processor = processor
 
     def embed(self, text: str, method: Literal['all', 'sentence']
@@ -33,15 +37,14 @@ class Embedder:
 
         Args:
             text (str)
-            method (all or sentence): embed all the paragraph 
+            method (all or sentence): embed all the paragraph
                             or compute the mean of all sentence embeddings
 
         Raises:
-            RuntimeError: [description]
-            AssertionError: [description]
+            RuntimeError: If the tokenized text gives too much tokens then the
+            embedder will crash. Catching and preventing the error before.
 
-        Returns:
-            List[float]: [description]
+            AssertionError: Check that the method is all or sentence.
         """
         with torch.no_grad():
 
@@ -49,9 +52,9 @@ class Embedder:
                 # Compute all the paragraph at once
                 tokens = self.tokenizer(text, return_tensors='pt',
                                         add_special_tokens=True)
-                tokens = tokens.to(DEVICE)
+                tokens = tokens.to(self.device)
 
-                embeded = self.model(tokens**)[0][0]
+                embeded = self.model(**tokens)[0][0]
 
                 return embeded[0].tolist()
 
@@ -64,7 +67,7 @@ class Embedder:
                 tokens = self.tokenizer(sentences, return_tensors='pt',
                                         padding=True, add_special_tokens=True)
 
-                tokens = tokens.to(DEVICE)
+                tokens = tokens.to(self.device)
 
                 if tokens['input_ids'].size()[1] > 512:
                     raise RuntimeError(

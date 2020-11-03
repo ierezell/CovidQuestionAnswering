@@ -5,12 +5,12 @@ You need to call it with streamlit run pipeline.py
 """
 import json
 import logging
-from typing import Tuple
+from typing import Tuple, List, Any
 
 import elasticsearch
 import streamlit as st
 
-from datatypes import Indexes, Models, RawEntry
+from datatypes import Indexes, RawEntry, Models
 from indexer.indexer import preprocess
 from qa.refinder import answer_question
 from qa.retriever import retrieve_docs
@@ -20,14 +20,19 @@ logging.getLogger("transformers.tokenization_utils_base"
                   ).setLevel(logging.ERROR)
 
 
-@st.cache(hash_funcs={elasticsearch.Elasticsearch: id})
-def ask_question(indexes: Indexes, models: Models, question: str):
+# @st.cache(hash_funcs={elasticsearch.Elasticsearch: id,
+#                       "preshed.maps.PreshMap": id,
+#                       "cymem.cymem.Pool": id,
+#                       "thinc.model.Model": id,
+#                       "spacy.pipeline.tok2vec.Tok2VecListener": id})
+def ask_question(indexes: Indexes, models: Models, question: str
+                 ) -> Tuple[List[float], List[Any], float, int]:
     """Query the database to retrieve the 10 most pertinent documents
 
     Args:
         indexes (Indexes)
         models (Models)
-        question (str) : The user question like "What are the symptoms" 
+        question (str) : The user question like "What are the symptoms"
 
     Returns:
 
@@ -73,10 +78,6 @@ if st.button('ask'):
     question_embed, supports, max_score, hits = ask_question(indexes, models,
                                                              user_input)
 
-    answer = answer_question(question_embed, user_input, supports, models)
-
-    st.write(answer)
-
     with st.beta_expander("See the supports documents"):
         st.write("Max Score")
         st.write(max_score)
@@ -86,10 +87,15 @@ if st.button('ask'):
         st.write([
             {
                 k: v for k, v in sup.items()
-                if k in ['title', 'content', 'parent_title', 'path']
+                if k in ['title', 'content', 'parent_title',
+                         'path', 'first_seen_date']
             }
             for sup in supports
         ])
+
+    answer = answer_question(question_embed, user_input, supports, models)
+
+    st.write(answer)
 
 if st.button('clear database'):
     with st.spinner('Processing...'):

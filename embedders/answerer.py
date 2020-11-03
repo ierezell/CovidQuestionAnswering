@@ -1,9 +1,11 @@
-from typing import List, TypedDict, cast
+from typing import TypedDict
 
 import torch
-from datatypes import LANGUAGES, MODEL_NAMES, Answer
-from transformers import (AutoModelForQuestionAnswering as AutoModelQA,
-                          AutoTokenizer)
+from config import LANGUAGES
+from .config import MODEL_NAMES
+from datatypes import Answer
+from transformers import AutoModelForQuestionAnswering as AutoModelQA
+from transformers import AutoTokenizer
 from transformers.pipelines import pipeline
 
 
@@ -25,16 +27,23 @@ class Answerer:
     It is used in :func:`~qa.refinder.answer_question`
     """
 
-    def __init__(self, lang: LANGUAGES = 'multi') -> None:
+    def __init__(self, lang: LANGUAGES = 'multi', prefer_gpu: bool = False
+                 ) -> None:
 
         self.tokenizer = AutoTokenizer.from_pretrained(MODEL_NAMES[lang])
         self.model = AutoModelQA.from_pretrained(MODEL_NAMES[lang])
 
-        self.nlp = pipeline("question-answering",
-                            model=self.model,
-                            tokenizer=self.tokenizer,
-                            framework='pt',
-                            device=0 if torch.cuda.is_available() else -1)
+        DEVICE = 0 if (torch.cuda.is_available() and prefer_gpu) else -1
+
+        self.nlp = pipeline(
+            "question-answering",
+            model=self.model,
+            tokenizer=self.tokenizer,
+            framework='pt',
+            device=DEVICE
+        )
+
+        print(f"Answerer will compute on {'cpu' if DEVICE < 0 else 'gpu'}")
 
     def answer(self, question: str, context: str) -> Answer:
         """Give the best sentence in the context answering the question

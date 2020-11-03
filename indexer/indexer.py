@@ -6,8 +6,8 @@ from typing import Any, Dict, List, Tuple, cast
 import elasticsearch
 import numpy as np
 import spacy
-from datatypes import (EMBED_DIM, LANGUAGES, SPACY_MODEL_NAMES, Chunk, Indexes,
-                       Models, RawEntry)
+from config import EMBED_DIM, LANGUAGES, SPACY_MODEL_NAMES
+from datatypes import Chunk, Indexes, Models, RawEntry
 from embedders.answerer import Answerer
 from embedders.embedders import Embedder
 from utils import remove_links, sanitize_text
@@ -83,7 +83,7 @@ def create_models(langs: List[LANGUAGES]) -> Models:
     answerer: Dict[LANGUAGES, Answerer] = {}
 
     for lang in langs:
-        embedder.update({lang: Embedder(processor[lang], lang)})
+        embedder.update({lang: Embedder(processor[lang], lang, True)})
         answerer.update({lang: Answerer(cast(LANGUAGES, f'qa_{lang}'))})
 
     models: Models = {"embedder": embedder, "answerer": answerer,

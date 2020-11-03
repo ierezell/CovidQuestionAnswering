@@ -7,28 +7,7 @@ from typing import Any, Dict, List, Literal, Optional, TypedDict
 
 from elasticsearch import Elasticsearch
 
-from embedders.answerer import Answerer
-from embedders.embedders import Embedder
-
-LANGUAGES = Literal['en', 'fr', 'multi', 'qa_fr', 'qa_en', 'qa_multi']
-CODE_TO_LANG = {"en": "english", "fr": "french"}
-LANG_TO_CODE = {v: k for k, v in CODE_TO_LANG.items()}
-
-CHUNK_SIZE = 1000  # number of word per paragraph
-NB_KEYWORDS = 6  # number of keywords to keep per chunk
-EMBED_DIM = 768
-MODEL_NAMES: Dict[LANGUAGES, str] = {
-        "fr": "sentence-transformers/distilbert-multilingual-nli-stsb-quora-ranking",  # noqa E501
-        "multi": 'facebook/mbart-large-cc25',
-        "en": 'None',
-        "qa_en": 'None',
-        "qa_fr": 'etalab-ia/camembert-base-squadFR-fquad-piaf',
-        "qa_multi": 'deepset/xlm-roberta-large-squad2',
-    }
-
-SPACY_MODEL_NAMES: Dict[LANGUAGES, str] = {"multi": "xx_ent_wiki_sm",
-                                           "en": "en_core_web_sm",
-                                           "fr": "fr_dep_news_trf"}
+from config import LANGUAGES
 
 
 class RawEntry(TypedDict):
@@ -70,12 +49,6 @@ class Indexes(TypedDict):
     db: Elasticsearch
 
 
-class Models(TypedDict, total=False):
-    embedder: Dict[LANGUAGES, Embedder]
-    answerer: Dict[LANGUAGES, Answerer]
-    processor: Dict[LANGUAGES, Any]
-
-
 class Answer(TypedDict):
     score: float
     content: str
@@ -83,3 +56,9 @@ class Answer(TypedDict):
     start: int
     end: int
     elected: Literal['qa', 'kw', 'n/a']
+
+
+class Models(TypedDict, total=False):
+    embedder: Dict[LANGUAGES, Any]
+    answerer: Dict[LANGUAGES, Any]
+    processor: Dict[LANGUAGES, Any]

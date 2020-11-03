@@ -1,11 +1,16 @@
 from typing import Dict, List, Tuple
 
-from datatypes import LANGUAGES, Chunk, Link, MetaData, Models
+from config import LANGUAGES
+from datatypes import Chunk, Link, MetaData, Models
 from embedders.embedders import Embedder
 
 
 def create_metadata(chunk: Chunk, links: List[Link], models: Models
                     ) -> MetaData:
+    """
+    Compute all the necessary infos to add to the chunk (like embeddings, 
+    keywords, summary etc...)
+    """
 
     new_metadatas: MetaData = {}
 
@@ -28,6 +33,7 @@ def create_metadata(chunk: Chunk, links: List[Link], models: Models
 
 def embed_chunk(chunk: Chunk, embedders: Dict[LANGUAGES, Embedder]
                 ) -> Tuple[List[float], List[float]]:
+    """Embed title and content of the chunk"""
 
     embedder = embedders.get(chunk['language'], embedders['fr'])
 
