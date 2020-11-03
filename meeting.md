@@ -12,19 +12,27 @@ https://www.quebec.ca/sante/problemes-de-sante/a-z/coronavirus-2019/reponses-que
 
 - Computing on GPU 200s vs 600 for cpu
 - Boost by date (with decay)
+- Better refinder
 
 # Doing :
 
 - Better filter / Election (Ex : question "Plop" returns documents)
 - Test embdding all vs sentence
 - add other field boosting
-- Add NER/lemmatization to retrieve voc with same semantic structure
+- Add NER/lemmatization to retrieve voc with same semantic structure (spacy or es builtin)
+- Add content of last parent with content
 
 # Ideas :
 
-- Move the clear_database button further from the ask button (stupid missclick)
 - Baseline done : Need a dataset to test the solutions
+- Test differents embedders with dataset
 
 # TLDR :
 
 - Question working good if well formulated, the rest is still returning crap -> need better cleaning and election
+
+# Done but to check
+
+- Embeddings : Embed full paragraph vs embed all sentences and mean them
+- Cosine : weights of all types
+- Chunk size (be careful not too big for the embedder)

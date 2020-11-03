@@ -6,7 +6,18 @@ At the end we should be able to give it a website Url, pdfs or differents docume
 
 It is written in python and will run in a docker which will then be integrated with a botpress module calling the api
 
-## Installation & Running
+## Code organization :
+
+- Precomputed datasets are in the dataset folder.
+- The embedder folder is a wrapper for the deeplearning models (embedding and QA)
+- Indexer folder is responsible for all the preprocessing
+- Qa folder is responsible for all the retrieval / inference
+- `config.py` stores all the useful global variables like model names
+- `datatypes.py` stores all datatypes used in the fonctions for type hints
+- `utils.py` provides some global standalone functions like sanitazing/hashing text or math like a cosine similarity
+- `test.py` is made for developpement only to be sure that the code runs without trying all the interactive streamlit things.
+
+## Installation & Running :
 
 - Make sure you have python at least 3.8
 - Optional but prefered : Make a virtual environement
