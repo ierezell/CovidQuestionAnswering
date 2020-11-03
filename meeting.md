@@ -11,17 +11,19 @@ https://www.quebec.ca/sante/problemes-de-sante/a-z/coronavirus-2019/reponses-que
 # Done :
 
 - Computing on GPU 200s vs 600 for cpu
+- Boost by date (with decay)
 
 # Doing :
 
-- Test embdding all vs sentence
 - Better filter / Election (Ex : question "Plop" returns documents)
-- Boost by date or other fields
+- Test embdding all vs sentence
+- add other field boosting
 
 # Ideas :
 
 - Add NER to retrieve voc with same semantic structure
 - Move the clear_database button further from the ask button (stupid missclick)
+- Lemmatize all the content of the db ?
 
 # TLDR :
 

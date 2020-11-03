@@ -8,7 +8,7 @@ from embedders.embedders import Embedder
 def create_metadata(chunk: Chunk, links: List[Link], models: Models
                     ) -> MetaData:
     """
-    Compute all the necessary infos to add to the chunk (like embeddings, 
+    Compute all the necessary infos to add to the chunk (like embeddings,
     keywords, summary etc...)
     """
 

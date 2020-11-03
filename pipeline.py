@@ -7,7 +7,6 @@ import json
 import logging
 from typing import Tuple, List, Any
 
-import elasticsearch
 import streamlit as st
 
 from datatypes import Indexes, RawEntry, Models

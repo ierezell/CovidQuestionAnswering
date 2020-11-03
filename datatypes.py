@@ -53,6 +53,7 @@ class Answer(TypedDict):
     score: float
     content: str
     answer: str
+    title: str
     start: int
     end: int
     elected: Literal['qa', 'kw', 'n/a']
