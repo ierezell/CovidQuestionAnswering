@@ -8,4 +8,4 @@ MODEL_NAMES: Dict[LANGUAGES, str] = {
         "qa_en": 'None',
         "qa_fr": 'etalab-ia/camembert-base-squadFR-fquad-piaf',
         "qa_multi": 'deepset/xlm-roberta-large-squad2',
-    }
+        'sum_fr': "facebook/bart-large-xsum"}

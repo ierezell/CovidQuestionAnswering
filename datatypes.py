@@ -9,6 +9,9 @@ from elasticsearch import Elasticsearch
 
 from config import LANGUAGES
 
+EmbeddingMode = Literal["all", "sentence"]
+RetrieveMode = Literal['dense', 'hybrid', 'sparse']
+
 
 class RawEntry(TypedDict):
     type: Literal['page', 'section', 'pdf']
@@ -38,6 +41,8 @@ class Chunk(RawEntry, MetaData):
     original_hash: str
     chunk_start: int
     page_content: str
+    lemma_content: str
+    lemma_page_content: str
     first_seen_date: datetime
     parent_content_embedding: List[float]
     parent_title_embedding: List[float]
@@ -58,24 +63,29 @@ class Answer(TypedDict):
     start: int
     end: int
     elected: Literal['qa', 'kw', 'n/a']
+    link: List[str]
 
 
 class Models(TypedDict, total=False):
     embedder: Dict[LANGUAGES, Any]
     answerer: Dict[LANGUAGES, Any]
     processor: Dict[LANGUAGES, Any]
+    summarizer: Dict[LANGUAGES, Any]
 
 
 class RetrieveOptions(TypedDict):
     retrieve_nb: int
+    retrieve_mode: RetrieveMode
     boost_lem: float
+    boost_page_lem: float
     boost_ner: float
     boost_date: float
     boost_title: float
     boost_content: float
+    boost_page: float
     boost_parent_title: float
     boost_parent_content: float
     boost_title_embedding: float
     boost_parent_embedding: float
     boost_content_embedding: float
-    embedding_mode: Literal["all", "sentence"]
+    embedding_mode: EmbeddingMode

@@ -4,7 +4,8 @@ Utils file which regroup miscalenous fonctions use in the rest of the code
 import hashlib
 import re
 from copy import deepcopy
-from typing import List, Tuple
+from typing import List, Tuple, Set
+from spacy.lang.fr.stop_words import STOP_WORDS as fr_stop
 
 import numpy as np
 
@@ -34,17 +35,22 @@ def remove_links(text: str) -> Tuple[str, List[Link]]:
 def sanitize_text(text: str) -> str:
     new_text = deepcopy(text)
     new_text = new_text.strip()
-    new_text = new_text.replace(';', '. ')
     new_text = new_text.replace('\xa0', ' ')
-    new_text = new_text.replace('à', 'à')
     new_text = new_text.replace('\t', ' ')
     new_text = new_text.replace('\r', ' ')
     new_text = new_text.replace('\\[', '')
     new_text = new_text.replace('\\]', '')
+    # not the same a in bit representation
+    new_text = new_text.replace('à', 'à')
+
+    new_text = new_text.replace(' :\n*', '. ')
+    new_text = new_text.replace(' ;\n*', '. ')
+    new_text = new_text.replace(';', '. ')
     new_text = new_text.replace('_', '')
     new_text = new_text.replace('\n', '. ')
     new_text = new_text.replace('..', '.')
     new_text = new_text.replace('*', ' ')
+    new_text = new_text.replace(' .', '')
     new_text = re.sub(r'\s+', ' ', new_text)
     new_text = re.sub(r'\.(\w)', r'. \g<1>', new_text)
     return new_text
@@ -61,3 +67,7 @@ def cosine_similarity(a: List[float], b: List[float]) -> float:
         return np.dot(a, b) / norm
     else:
         return 0
+
+
+def get_keylemmas(text: str, processor) -> Set[str]:
+    return {w.lemma_ for w in processor(text) if w.lemma_ not in fr_stop}

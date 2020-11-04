@@ -10,7 +10,9 @@ from config import EMBED_DIM, LANGUAGES, SPACY_MODEL_NAMES
 from datatypes import Chunk, Indexes, Models, RawEntry
 from embedders.answerer import Answerer
 from embedders.embedders import Embedder
-from utils import remove_links, sanitize_text
+from embedders.summarizer import Summarizer
+from utils import remove_links, sanitize_text, get_keylemmas
+
 
 from .chunker import chunker
 from .metabuilder import create_metadata
@@ -32,6 +34,10 @@ def recurse_add(db_name: str, raw_entry: RawEntry, level: int,
         chunk.pop('children', None)
         chunk['first_seen_date'] = first_seen_date
         chunk['page_content'] = raw_entry['content']
+        chunk['lemma_content'] = " ".join(get_keylemmas(
+            chunk['content'], models["processor"]["fr"]))
+        chunk['lemma_page_content'] = " ".join(
+            get_keylemmas(chunk['page_content'], models["processor"]["fr"]))
 
         metadatas = create_metadata(chunk, links, models,
                                     db_name.split('_')[1])
@@ -82,13 +88,16 @@ def create_models(langs: List[LANGUAGES]) -> Models:
 
     embedder: Dict[LANGUAGES, Embedder] = {}
     answerer: Dict[LANGUAGES, Answerer] = {}
+    summarizer: Dict[LANGUAGES, Summarizer] = {}
 
     for lang in langs:
         embedder.update({lang: Embedder(processor[lang], lang, True)})
         answerer.update({lang: Answerer(cast(LANGUAGES, f'qa_{lang}'))})
+        summarizer.update(
+            {lang: Summarizer(cast(LANGUAGES, f'sum_{lang}'), True)})
 
     models: Models = {"embedder": embedder, "answerer": answerer,
-                      "processor": processor}
+                      "processor": processor, "summarizer": summarizer}
 
     return models
 

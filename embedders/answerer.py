@@ -30,15 +30,15 @@ class Answerer:
     def __init__(self, lang: LANGUAGES = 'multi', prefer_gpu: bool = False
                  ) -> None:
 
-        self.tokenizer = AutoTokenizer.from_pretrained(MODEL_NAMES[lang])
-        self.model = AutoModelQA.from_pretrained(MODEL_NAMES[lang])
+        tokenizer = AutoTokenizer.from_pretrained(MODEL_NAMES[lang])
+        model = AutoModelQA.from_pretrained(MODEL_NAMES[lang])
 
         DEVICE = 0 if (torch.cuda.is_available() and prefer_gpu) else -1
 
         self.nlp = pipeline(
             "question-answering",
-            model=self.model,
-            tokenizer=self.tokenizer,
+            model=model,
+            tokenizer=tokenizer,
             framework='pt',
             device=DEVICE
         )
@@ -66,6 +66,7 @@ class Answerer:
                 'start': res['start'],
                 'end': res['end'],
                 'elected': 'qa',
+                'link': [li['path'] for li in chunk['links']]
             }
             # TODO Move the logic of finding the full sentence here
         return answer

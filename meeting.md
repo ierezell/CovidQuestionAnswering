@@ -6,6 +6,13 @@ https://www.quebec.ca/sante/problemes-de-sante/a-z/coronavirus-2019/reponses-que
 - Existe-t-il un traitement contre la COVID‑19 ?
 - Est-ce qu'il existe un vaccin contre le COVID-19 // Good answer
 
+- Combien de deces -> No good answer
+
+- Comment soulager les maux de gorge?
+- Comment faire pour atténuer le mal à la gorge? Give two different results
+  both correct, one hitting "maux" the other "mal" even with embeddings
+  can be corrected with lem
+
 - Multi chunk appears many time (because of title)
 
 # Done :
@@ -26,6 +33,8 @@ https://www.quebec.ca/sante/problemes-de-sante/a-z/coronavirus-2019/reponses-que
 
 - Baseline done : Need a dataset to test the solutions
 - Test differents embedders with dataset
+- Lemmatize text and embed it with fasttext because no more context
+- Summarize chunks with BART
 
 # TLDR :
 

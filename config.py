@@ -1,7 +1,8 @@
 from typing import Literal, Dict
 
 
-LANGUAGES = Literal['en', 'fr', 'multi', 'qa_fr', 'qa_en', 'qa_multi']
+LANGUAGES = Literal['en', 'fr', 'multi',
+                    'qa_fr', 'qa_en', 'qa_multi', 'sum_fr']
 CODE_TO_LANG = {"en": "english", "fr": "french"}
 LANG_TO_CODE = {v: k for k, v in CODE_TO_LANG.items()}
 
